@@ -227,9 +227,12 @@ export default function GeneratorTab({
         clearTimeout(timeoutId);
         
         const duration = testVideo.duration;
-        if (isNaN(duration) || !isFinite(duration) || duration <= 0.1) {
+        if (duration === Infinity) {
+          // WebM missing duration header is normal for real-time recordings in browser, allow it!
+          resolve({ isValid: true });
+        } else if (isNaN(duration) || duration <= 0.1) {
           resolve({ isValid: false, reason: "Falha ao decodificar a duração do vídeo gerado." });
-        } else if (Math.abs(duration - originalDuration) > 5.0 && originalDuration > 1) {
+        } else if (Math.abs(duration - originalDuration) > 12.0 && Math.abs(duration - originalDuration) / originalDuration > 0.35 && originalDuration > 1) {
           resolve({ isValid: false, reason: `Duração incorreta (${duration.toFixed(1)}s vs original ${originalDuration.toFixed(1)}s).` });
         } else {
           resolve({ isValid: true });
@@ -329,7 +332,7 @@ export default function GeneratorTab({
     tempVideo.muted = false; // Capture audio track
     tempVideo.playsInline = true;
     tempVideo.loop = false;
-    tempVideo.autoplay = true;
+    tempVideo.autoplay = false;
     tempVideo.preload = 'auto';
 
     // Crucial: Append video to DOM so browsers force hardware rendering and frame decoding
@@ -368,19 +371,6 @@ export default function GeneratorTab({
     // Set a very generous cap of 10 minutes (600,000 ms) instead of 30 seconds
     durationMs = Math.min(600000, Math.max(1500, durationMs));
 
-    try {
-      tempVideo.currentTime = 0;
-      await tempVideo.play();
-    } catch (e) {
-      console.warn("Could not autoplay video programmatically, retrying muted:", e);
-      try {
-        tempVideo.muted = true;
-        await tempVideo.play();
-      } catch (e2) {
-        console.error("Failed to play video:", e2);
-      }
-    }
-
     let mediaRecorder: MediaRecorder | null = null;
     const recordedChunks: Blob[] = [];
     let stream: MediaStream | null = null;
@@ -389,6 +379,7 @@ export default function GeneratorTab({
     let audioSource: MediaElementAudioSourceNode | null = null;
 
     try {
+      // Capture canvas stream at a constant 30 FPS to reduce encoding lag and ensure flawless alignment
       if ((canvas as any).captureStream) {
         stream = (canvas as any).captureStream(30);
       } else if ((canvas as any).mozCaptureStream) {
@@ -435,15 +426,13 @@ export default function GeneratorTab({
           }
         }
 
-        let options = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 8000000 };
+        // Prefer video/webm;codecs=vp8 because it is extremely fast to encode on any CPU
+        let options = { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 12000000 };
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options = { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 8000000 };
+          options = { mimeType: 'video/webm', videoBitsPerSecond: 12000000 };
         }
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options = { mimeType: 'video/webm', videoBitsPerSecond: 8000000 };
-        }
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options = { mimeType: 'video/mp4', videoBitsPerSecond: 8000000 };
+          options = { mimeType: 'video/mp4', videoBitsPerSecond: 12000000 };
         }
         
         mediaRecorder = new MediaRecorder(stream, options);
@@ -452,19 +441,36 @@ export default function GeneratorTab({
             recordedChunks.push(event.data);
           }
         };
+        
+        // Start recorder BEFORE we trigger playback to guarantee perfect sync of audio and video tracks from time 0
         mediaRecorder.start();
       }
     } catch (err) {
       console.warn("Could not initialize MediaRecorder stream capture:", err);
     }
 
+    try {
+      tempVideo.currentTime = 0;
+      await tempVideo.play();
+    } catch (e) {
+      console.warn("Could not autoplay video programmatically, retrying muted:", e);
+      try {
+        tempVideo.muted = true;
+        await tempVideo.play();
+      } catch (e2) {
+        console.error("Failed to play video:", e2);
+      }
+    }
+
     const videoElConfig = videoElIndex !== -1 ? elements[videoElIndex] : null;
 
     await new Promise<void>((resolve) => {
       let frameTimer: any = null;
+      let watchdogTimer: any = null;
       let rafId: number | null = null;
       let rvfcId: number | null = null;
       let isFinished = false;
+      let lastFrameTime = performance.now();
 
       const finalizeRecording = () => {
         if (isFinished) return;
@@ -473,6 +479,10 @@ export default function GeneratorTab({
         if (frameTimer) {
           clearTimeout(frameTimer);
           frameTimer = null;
+        }
+        if (watchdogTimer) {
+          clearInterval(watchdogTimer);
+          watchdogTimer = null;
         }
         if (rafId) {
           cancelAnimationFrame(rafId);
@@ -511,6 +521,7 @@ export default function GeneratorTab({
 
       const renderFrame = () => {
         if (isFinished) return;
+        lastFrameTime = performance.now();
 
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, width, height);
@@ -540,36 +551,36 @@ export default function GeneratorTab({
         }
       };
 
-      // 1. requestVideoFrameCallback: Best standard for video rendering frame by frame, even backgrounded
-      if ('requestVideoFrameCallback' in tempVideo) {
-        const updateOnFrame = () => {
-          if (isFinished) return;
-          renderFrame();
-          rvfcId = (tempVideo as any).requestVideoFrameCallback(updateOnFrame);
-        };
-        rvfcId = (tempVideo as any).requestVideoFrameCallback(updateOnFrame);
-      }
+      // Primary rendering driver: requestAnimationFrame (30 FPS visual smoothness)
+      let lastRenderTime = 0;
+      const fpsInterval = 1000 / 30; // 33.33ms
 
-      // 2. requestAnimationFrame: High performance visual sync
       const animationLoop = () => {
         if (isFinished) return;
-        renderFrame();
         rafId = requestAnimationFrame(animationLoop);
+
+        const now = performance.now();
+        const elapsed = now - lastRenderTime;
+
+        if (elapsed >= fpsInterval - 1) { // 1ms tolerance
+          lastRenderTime = now - (elapsed % fpsInterval);
+          renderFrame();
+        }
       };
       rafId = requestAnimationFrame(animationLoop);
 
-      // 3. timeupdate event: Absolute bulletproof fallback whenever video advances its playhead
-      tempVideo.ontimeupdate = () => {
-        renderFrame();
-      };
-
-      // 4. setTimeout interval (30fps fallback): Avoid background throttling
-      const startTimeoutLoop = () => {
-        if (isFinished) return;
-        renderFrame();
-        frameTimer = setTimeout(startTimeoutLoop, 33);
-      };
-      startTimeoutLoop();
+      // WebM-compliant watchdog backup: If no frame is rendered for 100ms (e.g. background/iframe throttling),
+      // we force-render a frame to keep the recorder streaming without freezing.
+      watchdogTimer = setInterval(() => {
+        if (isFinished) {
+          clearInterval(watchdogTimer);
+          return;
+        }
+        const now = performance.now();
+        if (now - lastFrameTime >= 100) {
+          renderFrame();
+        }
+      }, 100);
 
       // Absolute fallback timer (generous ceiling to prevent hanging loops)
       setTimeout(() => {

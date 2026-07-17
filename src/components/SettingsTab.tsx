@@ -14,7 +14,9 @@ import {
   Terminal, 
   Eye, 
   CheckCircle2, 
-  Send 
+  Send,
+  Github,
+  ExternalLink
 } from 'lucide-react';
 
 export default function SettingsTab() {
@@ -243,6 +245,49 @@ export default function SettingsTab() {
               <div>
                 <p className="font-semibold text-white">Como adicionar novas fontes?</p>
                 <p className="text-[11px] mt-0.5">Adicione os arquivos de fontes TTF ou OTF na pasta de recursos local do software. O arquivo de estilo as importará automaticamente para a interface do Figma.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* GitHub Pages Deployment Info */}
+          <div className="p-4 bg-[#1e1e20] border border-blue-900/30 rounded-xl space-y-4">
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Github size={13} className="text-blue-400" /> Deploy no GitHub Pages (gh-pages)
+            </h3>
+            
+            <p className="text-[10px] text-gray-400 leading-normal">
+              Preparamos as configurações ideais para o seu deploy no GitHub Pages funcionar imediatamente! O caminho base foi ajustado e as dependências estão prontas.
+            </p>
+
+            <div className="space-y-3">
+              <div className="p-3 bg-[#151518] rounded-lg border border-gray-900 space-y-1.5">
+                <p className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                  <CheckCircle2 size={11} />
+                  <span>Método 1: GitHub Actions (Automático)</span>
+                </p>
+                <p className="text-[9px] text-gray-400 leading-normal">
+                  Criamos o arquivo <code className="text-blue-400 font-mono">.github/workflows/deploy.yml</code>. Quando você enviar seu projeto para o GitHub, o deploy será feito automaticamente em cada commit no branch <code className="text-white">main</code>!
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#151518] rounded-lg border border-gray-900 space-y-1.5">
+                <p className="text-[10px] font-bold text-blue-400 flex items-center gap-1">
+                  <Terminal size={11} />
+                  <span>Método 2: Linha de Comando (Manual)</span>
+                </p>
+                <p className="text-[9px] text-gray-400 leading-normal">
+                  Após baixar o código, execute os seguintes comandos no terminal do seu computador:
+                </p>
+                <div className="bg-[#0c0c0e] p-2 rounded text-[9px] font-mono text-gray-300 border border-gray-850 select-all">
+                  npm run deploy
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-950/20 border border-amber-500/20 rounded-lg">
+                <p className="text-[10px] font-bold text-amber-400">⚠️ Nota Importante</p>
+                <p className="text-[9px] text-gray-400 mt-1 leading-normal">
+                  Garantimos que o arquivo <code className="text-amber-400">vite.config.ts</code> possua <code className="text-white">base: './'</code> para que todas as mídias, manifestos PWA e assets carreguem perfeitamente em qualquer domínio do GitHub Pages!
+                </p>
               </div>
             </div>
           </div>

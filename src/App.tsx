@@ -654,9 +654,21 @@ export default function App() {
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                       No Computador (PC / Mac)
                     </p>
-                    <p className="text-xs text-gray-400 leading-relaxed pl-3.5">
-                      No Google Chrome, Edge ou Brave, clique no ícone de <strong className="text-white">Instalação (computador com uma seta para baixo)</strong> localizado na barra de endereços (ao lado da estrela de favoritos), ou abra o menu do navegador e escolha <strong className="text-white">"Instalar AutoPost Studio"</strong>.
-                    </p>
+                    <div className="text-xs text-gray-400 leading-relaxed pl-3.5 space-y-2">
+                      <p>
+                        1. Certifique-se de estar usando o <strong className="text-white">Google Chrome, Microsoft Edge ou Brave</strong> fora do visualizador do AI Studio (clique no botão laranja acima para abrir em nova aba).
+                      </p>
+                      <p>
+                        2. Procure o ícone de <strong className="text-white">Instalação (computador com uma seta para baixo)</strong> na barra de endereços, ao lado da estrela de favoritos.
+                      </p>
+                      <div className="p-3 bg-blue-950/20 border border-blue-500/20 rounded text-[11px] text-gray-300">
+                        <strong className="text-blue-400">Dica se o ícone não aparecer:</strong> Se o ícone não estiver visível na barra de endereços, você pode instalar manualmente pelo menu do navegador:
+                        <ul className="list-disc list-inside mt-1.5 space-y-1 pl-1 text-gray-400">
+                          <li>No <strong className="text-white">Chrome</strong>: Clique no menu de <strong className="text-white">Três Pontos (canto superior direito) → Salvar e compartilhar → Instalar página / Instalar AutoPost</strong>.</li>
+                          <li>No <strong className="text-white">Edge</strong>: Clique no menu de <strong className="text-white">Três Pontos → Aplicativos → Instalar este site como aplicativo</strong>.</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Android Instructions */}

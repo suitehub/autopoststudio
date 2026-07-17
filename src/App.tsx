@@ -59,8 +59,11 @@ export default function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [isInIframe, setIsInIframe] = useState(false);
 
   useEffect(() => {
+    setIsInIframe(window.self !== window.top);
+
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -618,6 +621,24 @@ export default function App() {
               </div>
 
               <div className="p-6 space-y-5">
+                {isInIframe && (
+                  <div className="p-4 bg-amber-950/20 rounded-lg border border-amber-500/20 flex flex-col gap-3">
+                    <div className="flex gap-3">
+                      <CircleAlert size={18} className="text-amber-400 shrink-0 mt-0.5 animate-pulse" />
+                      <div className="text-xs text-gray-300 leading-relaxed">
+                        <p className="font-bold text-amber-400 mb-1">Visualizador do AI Studio Ativo</p>
+                        Como você está rodando o aplicativo dentro do visualizador do AI Studio (iframe), o navegador bloqueia a detecção de PWA por segurança. Para poder instalar no PC ou celular, você só precisa abrir o aplicativo em uma aba independente!
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => window.open(window.location.href, '_blank')}
+                      className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold font-mono rounded transition-colors uppercase cursor-pointer text-center"
+                    >
+                      Abrir em Nova Aba Independente
+                    </button>
+                  </div>
+                )}
+
                 <div className="p-4 bg-emerald-950/20 rounded-lg border border-emerald-500/20 flex gap-3">
                   <Sparkles size={18} className="text-emerald-400 shrink-0 mt-0.5 animate-pulse" />
                   <div className="text-xs text-gray-300 leading-relaxed">

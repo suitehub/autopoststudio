@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "Template": {
+      "title": "Template",
+      "description": "AutoPost media templates with elements and slides",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique template identifier"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Name of the template"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["video", "carousel"],
+          "description": "The media format type"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of creation"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner"
+        },
+        "slides": {
+          "type": "array",
+          "description": "Slides and elements composition"
+        }
+      },
+      "required": ["id", "name", "type", "createdAt", "ownerId", "slides"]
+    },
+    "HistoryItem": {
+      "title": "HistoryItem",
+      "description": "Historical logs of rendered videos and posts",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique history item identifier"
+        },
+        "projectName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Name of the project rendered"
+        },
+        "templateName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Name of the template used"
+        },
+        "templateType": {
+          "type": "string",
+          "enum": ["video", "carousel"],
+          "description": "The media format type"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of generation"
+        },
+        "count": {
+          "type": "number",
+          "description": "Number of media pieces generated"
+        },
+        "timeSpentSec": {
+          "type": "number",
+          "description": "Rendering time in seconds"
+        },
+        "exportFormat": {
+          "type": "string",
+          "description": "Output file format"
+        },
+        "exportQuality": {
+          "type": "string",
+          "description": "Resolution/Quality setting"
+        },
+        "exportFps": {
+          "type": "number",
+          "description": "Frames per second"
+        },
+        "outputPath": {
+          "type": "string",
+          "description": "Output path or asset URL"
+        },
+        "previewUrls": {
+          "type": "array",
+          "description": "Rendered thumbnail image URLs"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner"
+        }
+      },
+      "required": ["id", "projectName", "templateName", "templateType", "date", "count", "timeSpentSec", "exportFormat", "exportQuality", "exportFps", "outputPath", "previewUrls", "ownerId"]
+    }
+  },
+  "firestore": {
+    "templates/{templateId}": {
+      "schema": "Template",
+      "description": "Media template documents"
+    },
+    "history/{historyId}": {
+      "schema": "HistoryItem",
+      "description": "Historic rendered media logs"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud_firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /templates/{templateId} {
+      allow get, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow list: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow create, update: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    match /history/{historyId} {
+      allow get, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow list: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow create, update: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+    }
+  }
+}

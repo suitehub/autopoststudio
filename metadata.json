@@ -1,0 +1,6 @@
+{
+  "name": "AutoPost Studio",
+  "description": "Software profissional para geração automática de vídeos e carrosséis para redes sociais em massa a partir de templates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -9,14 +9,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="./icon-192.png" />
-    <script type="module" crossorigin src="./assets/index-QGA07Oxh.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DfO97Swb.css">
+    <script type="module" crossorigin src="./assets/index-BlvliMYj.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BlFqXd4Y.css">
   </head>
   <body>
     <div id="root"></div>
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
+        function registerSW() {
           navigator.serviceWorker.register('/sw.js')
             .then((reg) => {
               console.log('Service Worker registrado com sucesso:', reg.scope);
@@ -24,7 +24,13 @@
             .catch((err) => {
               console.log('Falha ao registrar o Service Worker:', err);
             });
-        });
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          registerSW();
+        } else {
+          window.addEventListener('load', registerSW);
+        }
       }
     </script>
   </body>

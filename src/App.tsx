@@ -17,7 +17,8 @@ import {
   LogIn,
   LogOut,
   ShieldCheck,
-  Database
+  Database,
+  Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -53,6 +54,37 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // PWA installation states
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setIsInstallable(false);
+      }
+    } else {
+      setShowInstallModal(true);
+    }
+  };
 
   // Load and sync user data from Firestore
   const loadUserData = async (currentUser: User) => {
@@ -413,6 +445,16 @@ export default function App() {
               <Settings size={15} className={activeTab === 'settings' ? 'text-blue-400' : ''} />
               <span>Configurações</span>
             </button>
+
+            <div className="h-[1px] bg-[#151519] my-2" />
+
+            <button
+              onClick={handleInstallClick}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/10 hover:shadow-[inset_0_0_8px_rgba(16,185,129,0.05)] border border-transparent hover:border-emerald-500/20 cursor-pointer"
+            >
+              <Download size={15} className="text-emerald-400 animate-bounce" style={{ animationDuration: '3s' }} />
+              <span>Instalar Aplicativo</span>
+            </button>
           </nav>
         </div>
 
@@ -551,6 +593,87 @@ export default function App() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* PWA Installation Instructions Modal */}
+      <AnimatePresence>
+        {showInstallModal && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-lg bg-[#0e0e11] border border-gray-800 rounded-xl overflow-hidden shadow-2xl"
+            >
+              <div className="p-6 border-b border-gray-800 flex items-center justify-between bg-[#09090c]">
+                <div className="flex items-center gap-2">
+                  <Download className="text-emerald-400" size={18} />
+                  <h3 className="text-sm font-bold text-gray-200 uppercase tracking-wider font-mono">Como instalar o aplicativo</h3>
+                </div>
+                <button
+                  onClick={() => setShowInstallModal(false)}
+                  className="text-gray-500 hover:text-gray-300 transition-colors text-xs font-mono px-2 py-1 rounded bg-gray-900 border border-gray-800 cursor-pointer"
+                >
+                  FECHAR
+                </button>
+              </div>
+
+              <div className="p-6 space-y-5">
+                <div className="p-4 bg-emerald-950/20 rounded-lg border border-emerald-500/20 flex gap-3">
+                  <Sparkles size={18} className="text-emerald-400 shrink-0 mt-0.5 animate-pulse" />
+                  <div className="text-xs text-gray-300 leading-relaxed">
+                    <p className="font-bold text-emerald-400 mb-1">Tecnologia PWA Ativa!</p>
+                    O AutoPost Studio é um aplicativo web progressivo. Você pode instalá-lo no seu computador ou celular para ter acesso instantâneo rápido, desempenho otimizado e visualização em tela cheia sem barras de navegação do navegador!
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {/* PC / Desktop Instructions */}
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide font-mono flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      No Computador (PC / Mac)
+                    </p>
+                    <p className="text-xs text-gray-400 leading-relaxed pl-3.5">
+                      No Google Chrome, Edge ou Brave, clique no ícone de <strong className="text-white">Instalação (computador com uma seta para baixo)</strong> localizado na barra de endereços (ao lado da estrela de favoritos), ou abra o menu do navegador e escolha <strong className="text-white">"Instalar AutoPost Studio"</strong>.
+                    </p>
+                  </div>
+
+                  {/* Android Instructions */}
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide font-mono flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      No Celular (Android)
+                    </p>
+                    <p className="text-xs text-gray-400 leading-relaxed pl-3.5">
+                      Abra o aplicativo no Chrome do celular, toque no menu de três pontos no canto superior direito e escolha a opção <strong className="text-white">"Instalar aplicativo"</strong> ou <strong className="text-white">"Adicionar à tela inicial"</strong>.
+                    </p>
+                  </div>
+
+                  {/* iOS/Safari Instructions */}
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide font-mono flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      No iPhone (iOS / Safari)
+                    </p>
+                    <p className="text-xs text-gray-400 leading-relaxed pl-3.5">
+                      Abra o aplicativo no navegador <strong className="text-white">Safari</strong>, toque no botão de <strong className="text-white">Compartilhar</strong> (ícone de quadrado com uma seta para cima), role para baixo e toque em <strong className="text-white">"Adicionar à Tela de Início"</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-[#09090c] border-t border-gray-800 flex justify-end">
+                <button
+                  onClick={() => setShowInstallModal(false)}
+                  className="px-4 py-2 text-xs font-mono font-bold bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors cursor-pointer"
+                >
+                  ENTENDI
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
